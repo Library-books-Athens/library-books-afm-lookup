@@ -27,7 +27,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    const client = await soap.createClientAsync(WSDL_URL);
+    const client = await soap.createClientAsync(WSDL_URL, { forceSoap12Headers: true });
+
     client.setSecurity(new soap.WSSecurity(username, password, { passwordType: 'PasswordText' }));
 
     const [result, rawResponse] = await client.rgWsPublic2AfmMethodAsync({
