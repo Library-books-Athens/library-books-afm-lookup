@@ -1,0 +1,7 @@
+{
+  "name": "library-books-afm-lookup",
+  "version": "1.0.0",
+  "dependencies": {
+    "soap": "^1.0.0"
+  }
+}
