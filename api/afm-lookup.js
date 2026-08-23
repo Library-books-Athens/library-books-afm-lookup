@@ -22,7 +22,7 @@ export default async function handler(req, res) {
   }
 
   const soapBody = `<?xml version="1.0" encoding="UTF-8"?>
-<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:rg="http://rgwspublic2/RgWsPublic2Service">
+<soapenv:Envelope xmlns:soapenv="http://www.w3.org/2003/05/soap-envelope" xmlns:rg="http://rgwspublic2/RgWsPublic2Service">
   <soapenv:Header>
     <wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
       <wsse:UsernameToken>
@@ -44,14 +44,13 @@ export default async function handler(req, res) {
 </soapenv:Envelope>`;
 
   try {
-        const response = await fetch('https://www1.gsis.gr/wsaade/RgWsPublic2/RgWsPublic2', {
+    const response = await fetch('https://www1.gsis.gr/wsaade/RgWsPublic2/RgWsPublic2', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/soap+xml; charset=utf-8',
       },
       body: soapBody,
     });
-
 
     const xmlText = await response.text();
 
@@ -73,6 +72,7 @@ export default async function handler(req, res) {
 
     const hasFault =
       xmlText.includes('soap:Fault') ||
+      xmlText.includes(':Fault') ||
       xmlText.includes('<faultstring>') ||
       xmlText.includes('errorRec') ||
       xmlText.includes('<errorCode>');
