@@ -32,7 +32,7 @@ export default async function handler(req, res) {
     </wsse:Security>
   </soapenv:Header>
   <soapenv:Body>
-    <rg:rgWsPublic2AfmMethod>
+    <rg:rgWsPublic2AfmMethod xmlns="http://rgwspublic2/RgWsPublic2">
       <RgWsPublic2InputRt_in>
         <INPUT_REC>
           <afmCalledBy>${myOwnAfm}</afmCalledBy>
@@ -54,8 +54,6 @@ export default async function handler(req, res) {
 
     const xmlText = await response.text();
 
-    // Modes: ?debug=1 shows the full raw XML the AADE service returned,
-    // so we can see the exact tag names if parsing ever needs adjusting.
     if (debug) {
       return res.status(200).json({
         httpStatus: response.status,
@@ -63,42 +61,33 @@ export default async function handler(req, res) {
       });
     }
 
-    // Helper: find a tag's value regardless of XML namespace prefix
-    // (AADE sometimes returns tags as <tag> and sometimes as <ns2:tag>)
     const extract = (tag) => {
       const match = xmlText.match(new RegExp(`<(?:\\w+:)?${tag}>([^<]*)</(?:\\w+:)?${tag}>`, 'i'));
       return match ? match[1].trim() : '';
     };
 
-    const hasFault =
-      xmlText.includes('soap:Fault') ||
-      xmlText.includes(':Fault') ||
-      xmlText.includes('<faultstring>') ||
-      xmlText.includes('errorRec') ||
-      xmlText.includes('<errorCode>');
-
+    const errorDescr = extract('error_descr');
     const name = extract('onomasia');
 
-    if (hasFault || !name) {
+    if (errorDescr || !name) {
       return res.status(404).json({
-        error: 'Δεν βρέθηκε επιχείρηση με αυτό το ΑΦΜ.',
-        hint: 'Αν αυτό συνεχίζεται με σωστό ΑΦΜ, δοκίμασε ?debug=1 στο URL για να δεις την ακριβή απάντηση του ΑΑΔΕ.',
+        error: errorDescr || 'Δεν βρέθηκε επιχείρηση με αυτό το ΑΦΜ.',
       });
     }
 
-    const postalAddress = extract('postalAddress');
-    const postalAddressNo = extract('postalAddressNo');
-    const postalZipCode = extract('postalZipCode');
-    const postalAreaDescription = extract('postalAreaDescription');
-    const doyDescr = extract('doyDescr');
-    const activityDescr = extract('firmActDescription') || extract('mainActivityDescription');
+    const doyDescr = extract('doy_descr');
+    const postalAddress = extract('postal_address');
+    const postalAddressNo = extract('postal_address_no');
+    const postalZipCode = extract('postal_zip_code');
+    const postalAreaDescription = extract('postal_area_description');
+    const legalStatusDescr = extract('legal_status_descr');
 
     return res.status(200).json({
       afm,
       name,
       address: `${postalAddress} ${postalAddressNo}, ${postalAreaDescription} ${postalZipCode}`.trim(),
       doy: doyDescr,
-      activity: activityDescr,
+      legalStatus: legalStatusDescr,
     });
   } catch (error) {
     return res.status(502).json({
