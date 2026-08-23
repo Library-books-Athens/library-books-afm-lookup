@@ -57,6 +57,7 @@ export default async function handler(req, res) {
       address: `${basicRec.postal_address || ''} ${basicRec.postal_address_no || ''}, ${basicRec.postal_area_description || ''} ${basicRec.postal_zip_code || ''}`.trim(),
       doy: basicRec.doy_descr,
       legalStatus: basicRec.legal_status_descr,
+      activity: basicRec.actlong_descr || basicRec.actlong_descr_fmt || '', // <-- Προσθήκη Δραστηριότητας
     });
   } catch (error) {
     return res.status(502).json({
