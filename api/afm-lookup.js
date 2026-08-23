@@ -45,6 +45,19 @@ export default async function handler(req, res) {
     const basicRec = inner?.basic_rec;
     const errorRec = inner?.error_rec;
 
+    // Εντοπισμός & ανάγνωση της κύριας δραστηριότητας από το firm_act_tab
+    const actTab = inner?.firm_act_tab?.item;
+    let activityDescription = '';
+
+    if (Array.isArray(actTab)) {
+      // Αν υπάρχουν πολλές δραστηριότητες, βρίσκουμε την κύρια (firm_act_kind == 1) ή την πρώτη
+      const mainAct = actTab.find(act => String(act.firm_act_kind) === '1') || actTab[0];
+      activityDescription = mainAct?.firm_act_descr || '';
+    } else if (actTab) {
+      // Αν υπάρχει μόνο μία δραστηριότητα
+      activityDescription = actTab.firm_act_descr || '';
+    }
+
     if (errorRec?.error_descr || !basicRec?.onomasia) {
       return res.status(404).json({
         error: errorRec?.error_descr || 'Δεν βρέθηκε επιχείρηση με αυτό το ΑΦΜ.',
@@ -57,7 +70,7 @@ export default async function handler(req, res) {
       address: `${basicRec.postal_address || ''} ${basicRec.postal_address_no || ''}, ${basicRec.postal_area_description || ''} ${basicRec.postal_zip_code || ''}`.trim(),
       doy: basicRec.doy_descr,
       legalStatus: basicRec.legal_status_descr,
-      activity: basicRec.actlong_descr || basicRec.actlong_descr_fmt || '', // <-- Προσθήκη Δραστηριότητας
+      activity: activityDescription,
     });
   } catch (error) {
     return res.status(502).json({
