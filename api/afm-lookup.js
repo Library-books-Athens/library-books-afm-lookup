@@ -7,6 +7,7 @@ export default async function handler(req, res) {
   }
 
   const afm = (req.query.afm || '').trim();
+  const debug = req.query.debug === '1';
 
   if (!/^\d{9}$/.test(afm)) {
     return res.status(400).json({ error: 'Το ΑΦΜ πρέπει να είναι 9 ψηφία.' });
@@ -54,26 +55,43 @@ export default async function handler(req, res) {
 
     const xmlText = await response.text();
 
-    if (xmlText.includes('errorRec') || xmlText.includes('<errorCode>')) {
-      return res.status(404).json({ error: 'Δεν βρέθηκε επιχείρηση με αυτό το ΑΦΜ.' });
+    // Modes: ?debug=1 shows the full raw XML the AADE service returned,
+    // so we can see the exact tag names if parsing ever needs adjusting.
+    if (debug) {
+      return res.status(200).json({
+        httpStatus: response.status,
+        rawResponse: xmlText,
+      });
     }
 
+    // Helper: find a tag's value regardless of XML namespace prefix
+    // (AADE sometimes returns tags as <tag> and sometimes as <ns2:tag>)
     const extract = (tag) => {
-      const match = xmlText.match(new RegExp(`<${tag}>([^<]*)</${tag}>`));
+      const match = xmlText.match(new RegExp(`<(?:\\w+:)?${tag}>([^<]*)</(?:\\w+:)?${tag}>`, 'i'));
       return match ? match[1].trim() : '';
     };
 
+    const hasFault =
+      xmlText.includes('soap:Fault') ||
+      xmlText.includes('<faultstring>') ||
+      xmlText.includes('errorRec') ||
+      xmlText.includes('<errorCode>');
+
     const name = extract('onomasia');
+
+    if (hasFault || !name) {
+      return res.status(404).json({
+        error: 'Δεν βρέθηκε επιχείρηση με αυτό το ΑΦΜ.',
+        hint: 'Αν αυτό συνεχίζεται με σωστό ΑΦΜ, δοκίμασε ?debug=1 στο URL για να δεις την ακριβή απάντηση του ΑΑΔΕ.',
+      });
+    }
+
     const postalAddress = extract('postalAddress');
     const postalAddressNo = extract('postalAddressNo');
     const postalZipCode = extract('postalZipCode');
     const postalAreaDescription = extract('postalAreaDescription');
     const doyDescr = extract('doyDescr');
     const activityDescr = extract('firmActDescription') || extract('mainActivityDescription');
-
-    if (!name) {
-      return res.status(404).json({ error: 'Δεν βρέθηκε επιχείρηση με αυτό το ΑΦΜ.' });
-    }
 
     return res.status(200).json({
       afm,
@@ -83,7 +101,9 @@ export default async function handler(req, res) {
       activity: activityDescr,
     });
   } catch (error) {
-    console.error('AADE lookup error:', error);
-    return res.status(502).json({ error: 'Σφάλμα επικοινωνίας με το ΑΑΔΕ. Δοκιμάστε ξανά.' });
+    return res.status(502).json({
+      error: 'Σφάλμα επικοινωνίας με το ΑΑΔΕ. Δοκιμάστε ξανά.',
+      details: debug ? String(error) : undefined,
+    });
   }
 }
