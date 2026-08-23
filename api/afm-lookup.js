@@ -28,19 +28,12 @@ export default async function handler(req, res) {
 
   try {
     const client = await soap.createClientAsync(WSDL_URL, { forceSoap12Headers: true });
-    if (debug && req.query.describe === '1') {
-  return res.status(200).json(client.describe());
-}
-
-
     client.setSecurity(new soap.WSSecurity(username, password, { passwordType: 'PasswordText' }));
 
     const [result, rawResponse] = await client.rgWsPublic2AfmMethodAsync({
-      RgWsPublic2InputRt_in: {
-        INPUT_REC: {
-          afmCalledBy: myOwnAfm,
-          afmCalledFor: afm,
-        },
+      INPUT_REC: {
+        afm_called_by: myOwnAfm,
+        afm_called_for: afm,
       },
     });
 
@@ -48,8 +41,9 @@ export default async function handler(req, res) {
       return res.status(200).json({ result, rawResponse });
     }
 
-    const basicRec = result?.result?.basic_rec;
-    const errorRec = result?.result?.error_rec;
+    const inner = result?.result?.rg_ws_public2_result_rtType;
+    const basicRec = inner?.basic_rec;
+    const errorRec = inner?.error_rec;
 
     if (errorRec?.error_descr || !basicRec?.onomasia) {
       return res.status(404).json({
