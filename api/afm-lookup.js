@@ -44,14 +44,14 @@ export default async function handler(req, res) {
 </soapenv:Envelope>`;
 
   try {
-    const response = await fetch('https://www1.gsis.gr/wsaade/RgWsPublic2/RgWsPublic2', {
+        const response = await fetch('https://www1.gsis.gr/wsaade/RgWsPublic2/RgWsPublic2', {
       method: 'POST',
       headers: {
-        'Content-Type': 'text/xml; charset=utf-8',
-        SOAPAction: '',
+        'Content-Type': 'application/soap+xml; charset=utf-8',
       },
       body: soapBody,
     });
+
 
     const xmlText = await response.text();
 
