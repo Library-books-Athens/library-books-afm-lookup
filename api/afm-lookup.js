@@ -28,6 +28,10 @@ export default async function handler(req, res) {
 
   try {
     const client = await soap.createClientAsync(WSDL_URL, { forceSoap12Headers: true });
+    if (debug && req.query.describe === '1') {
+  return res.status(200).json(client.describe());
+}
+
 
     client.setSecurity(new soap.WSSecurity(username, password, { passwordType: 'PasswordText' }));
 
