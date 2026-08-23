@@ -1,4 +1,5 @@
-import soap from 'soap';
+import * as soapPkg from 'soap';
+const soap = soapPkg.default || soapPkg;
 
 const WSDL_URL = 'https://www1.gsis.gr/wsaade/RgWsPublic2/RgWsPublic2?WSDL';
 
