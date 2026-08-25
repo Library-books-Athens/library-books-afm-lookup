@@ -4,9 +4,12 @@ const soap = soapPkg.default || soapPkg;
 const WSDL_URL = 'https://www1.gsis.gr/wsaade/RgWsPublic2/RgWsPublic2?WSDL';
 
 export default async function handler(req, res) {
+  // 1. Πλήρεις ρυθμίσεις CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
 
+  // 2. Διαχείριση Preflight Requests (OPTIONS)
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
@@ -50,11 +53,9 @@ export default async function handler(req, res) {
     let activityDescription = '';
 
     if (Array.isArray(actTab)) {
-      // Αν υπάρχουν πολλές δραστηριότητες, βρίσκουμε την κύρια (firm_act_kind == 1) ή την πρώτη
       const mainAct = actTab.find(act => String(act.firm_act_kind) === '1') || actTab[0];
       activityDescription = mainAct?.firm_act_descr || '';
     } else if (actTab) {
-      // Αν υπάρχει μόνο μία δραστηριότητα
       activityDescription = actTab.firm_act_descr || '';
     }
 
